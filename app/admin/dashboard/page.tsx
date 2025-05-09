@@ -3,87 +3,140 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { adminApi } from "@/lib/api"
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
+} from "@/components/ui/tabs"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Users, Store, Package, ShoppingBag, Check, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
+import { useToast } from "@/components/ui/use-toast"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
 
-// Mock pending vendors for admin dashboard
-const mockPendingVendors = [
-  {
-    id: 2,
-    storeName: "FashionFiesta",
-    storeDescription: "Clothing and accessories",
-    city: "Delhi",
-    state: "Delhi",
-    appliedDate: "April 24, 2023",
-  },
-  {
-    id: 4,
-    storeName: "HomeDecorPlus",
-    storeDescription: "Home decor and furniture",
-    city: "Bangalore",
-    state: "Karnataka",
-    appliedDate: "April 26, 2023",
-  },
-]
+interface PendingVendor {
+  id: number
+  userId: number
+  storeName: string
+  storeDescription: string
+  city: string
+  state: string
+  appliedDate: string
+}
 
-// Mock approved vendors for admin dashboard
-const mockApprovedVendors = [
-  {
-    id: 1,
-    storeName: "ElectroHub",
-    storeDescription: "Electronics",
-    city: "Mumbai",
-    state: "Maharashtra",
-  },
-  {
-    id: 3,
-    storeName: "GadgetGalaxy",
-    storeDescription: "Tech gadgets",
-    city: "Hyderabad",
-    state: "Telangana",
-  },
-]
+interface AdminDashboardData {
+  userCount: number
+  newUsersThisMonth: number
+  vendorCount: number
+  pendingVendorCount: number
+  productCount: number
+  newProductsThisMonth: number
+  orderCount: number
+  newOrdersThisMonth: number
+  totalRevenue: number
+  monthlyRevenue: number
+  categoryCount: number
+  pendingVendors: PendingVendor[]
+}
 
 export default function AdminDashboard() {
   const { user, isLoading } = useAuth()
   const router = useRouter()
-  const [pendingVendors, setPendingVendors] = useState(mockPendingVendors)
-  const [approvedVendors, setApprovedVendors] = useState(mockApprovedVendors)
+  const { toast } = useToast()
 
-  // Redirect if not logged in or not an admin
+  const [dashboardData, setDashboardData] = useState<AdminDashboardData | null>(null)
+  const [pendingVendors, setPendingVendors] = useState<PendingVendor[]>([])
+  const [rejectionDialogOpen, setRejectionDialogOpen] = useState(false)
+  const [vendorToReject, setVendorToReject] = useState<PendingVendor | null>(null)
+  const [rejectionReason, setRejectionReason] = useState("")
+
   useEffect(() => {
     if (!isLoading && (!user || user.role !== "ADMIN")) {
       router.push("/login")
     }
   }, [user, isLoading, router])
 
-  // Handle vendor approval
-  const handleApproveVendor = (vendorId: number) => {
-    // Find the vendor to approve
-    const vendorToApprove = pendingVendors.find((v) => v.id === vendorId)
-    if (!vendorToApprove) return
+  useEffect(() => {
+    const fetchData = async () => {
+      if (user?.role === "ADMIN") {
+        try {
+          const data = await adminApi.getDashboard()
+          setDashboardData(data)
+          setPendingVendors(data.pendingVendors || [])
+        } catch (err) {
+          console.error("Failed to fetch admin dashboard:", err)
+        }
+      }
+    }
 
-    // Remove from pending and add to approved
-    setPendingVendors(pendingVendors.filter((v) => v.id !== vendorId))
-    setApprovedVendors([...approvedVendors, vendorToApprove])
+    fetchData()
+  }, [user])
+
+  const handleApproveVendor = async (vendorId: number) => {
+    try {
+      await adminApi.approveVendor(vendorId)
+      setPendingVendors(prev => prev.filter(v => v.id !== vendorId))
+      toast({
+        title: "Vendor Approved",
+        description: "Vendor has been approved successfully."
+      })
+    } catch (error) {
+      console.error("Approve failed", error)
+      toast({
+        title: "Error",
+        description: "Could not approve vendor.",
+        variant: "destructive"
+      })
+    }
   }
 
-  // Handle vendor rejection
-  const handleRejectVendor = (vendorId: number) => {
-    // Remove from pending
-    setPendingVendors(pendingVendors.filter((v) => v.id !== vendorId))
+  const openRejectionDialog = (vendor: PendingVendor) => {
+    setVendorToReject(vendor)
+    setRejectionReason("")
+    setRejectionDialogOpen(true)
   }
 
-  if (isLoading) {
+  const confirmRejection = async () => {
+    if (!vendorToReject) return
+    try {
+      await adminApi.rejectVendor(vendorToReject.id, rejectionReason)
+      setPendingVendors(prev => prev.filter(v => v.id !== vendorToReject.id))
+      toast({
+        title: "Vendor Rejected",
+        description: `${vendorToReject.storeName} has been rejected.`
+      })
+    } catch (error) {
+      console.error("Reject failed", error)
+      toast({
+        title: "Error",
+        description: "Could not reject vendor.",
+        variant: "destructive"
+      })
+    } finally {
+      setRejectionDialogOpen(false)
+      setVendorToReject(null)
+    }
+  }
+
+  if (isLoading || !dashboardData) {
     return <div className="container mx-auto px-4 py-12">Loading...</div>
-  }
-
-  if (!user) {
-    return null // Will redirect in useEffect
   }
 
   return (
@@ -97,8 +150,8 @@ export default function AdminDashboard() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,248</div>
-            <p className="text-xs text-muted-foreground">+86 from last month</p>
+            <div className="text-2xl font-bold">{dashboardData.userCount}</div>
+            <p className="text-xs text-muted-foreground">+{dashboardData.newUsersThisMonth} from last month</p>
           </CardContent>
         </Card>
         <Card>
@@ -107,8 +160,8 @@ export default function AdminDashboard() {
             <Store className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{approvedVendors.length}</div>
-            <p className="text-xs text-muted-foreground">{pendingVendors.length} pending approval</p>
+            <div className="text-2xl font-bold">{dashboardData.vendorCount}</div>
+            <p className="text-xs text-muted-foreground">{dashboardData.pendingVendorCount} pending approval</p>
           </CardContent>
         </Card>
         <Card>
@@ -117,8 +170,8 @@ export default function AdminDashboard() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3,642</div>
-            <p className="text-xs text-muted-foreground">+350 from last month</p>
+            <div className="text-2xl font-bold">{dashboardData.productCount}</div>
+            <p className="text-xs text-muted-foreground">+{dashboardData.newProductsThisMonth} from last month</p>
           </CardContent>
         </Card>
         <Card>
@@ -127,8 +180,8 @@ export default function AdminDashboard() {
             <ShoppingBag className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">624</div>
-            <p className="text-xs text-muted-foreground">+42 from last month</p>
+            <div className="text-2xl font-bold">{dashboardData.orderCount}</div>
+            <p className="text-xs text-muted-foreground">+{dashboardData.newOrdersThisMonth} from last month</p>
           </CardContent>
         </Card>
         <Card>
@@ -137,12 +190,10 @@ export default function AdminDashboard() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">24</div>
+            <div className="text-2xl font-bold">{dashboardData.categoryCount}</div>
             <p className="text-xs text-muted-foreground">
               <Link href="/admin/categories">
-                <Button variant="link" className="h-auto p-0 text-xs">
-                  Manage Categories
-                </Button>
+                <Button variant="link" className="h-auto p-0 text-xs">Manage Categories</Button>
               </Link>
             </p>
           </CardContent>
@@ -172,28 +223,17 @@ export default function AdminDashboard() {
                         <div>
                           <p className="font-medium">{vendor.storeName}</p>
                           <p className="text-sm text-muted-foreground">{vendor.storeDescription}</p>
+                          <p className="text-sm text-muted-foreground">{vendor.city}, {vendor.state}</p>
                           <p className="text-sm text-muted-foreground">
-                            {vendor.city}, {vendor.state}
+                            Applied: {new Date(vendor.appliedDate).toLocaleDateString()}
                           </p>
-                          <p className="text-sm text-muted-foreground">Applied: {vendor.appliedDate}</p>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="flex items-center"
-                            onClick={() => handleRejectVendor(vendor.id)}
-                          >
-                            <X className="mr-1 h-4 w-4" />
-                            Reject
+                          <Button size="sm" variant="outline" onClick={() => openRejectionDialog(vendor)}>
+                            <X className="mr-1 h-4 w-4" /> Reject
                           </Button>
-                          <Button
-                            size="sm"
-                            className="flex items-center"
-                            onClick={() => handleApproveVendor(vendor.id)}
-                          >
-                            <Check className="mr-1 h-4 w-4" />
-                            Approve
+                          <Button size="sm" onClick={() => handleApproveVendor(vendor.id)}>
+                            <Check className="mr-1 h-4 w-4" /> Approve
                           </Button>
                         </div>
                       </div>
@@ -202,30 +242,6 @@ export default function AdminDashboard() {
                 ) : (
                   <p className="text-sm text-muted-foreground">No pending vendor applications.</p>
                 )}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Approved Vendors</CardTitle>
-              <CardDescription>Manage existing vendors</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {approvedVendors.map((vendor) => (
-                  <div key={vendor.id} className="rounded-lg border p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">{vendor.storeName}</p>
-                        <p className="text-sm text-muted-foreground">{vendor.storeDescription}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {vendor.city}, {vendor.state}
-                        </p>
-                      </div>
-                      <Badge>Approved</Badge>
-                    </div>
-                  </div>
-                ))}
               </div>
             </CardContent>
           </Card>
@@ -270,18 +286,37 @@ export default function AdminDashboard() {
               <CardDescription>Manage product categories and subcategories</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Add, edit, or remove product categories and subcategories to organize your store.
-                </p>
-                <Link href="/admin/categories">
-                  <Button className="w-full sm:w-auto">Manage Categories</Button>
-                </Link>
-              </div>
+              <Link href="/admin/categories">
+                <Button>Manage Categories</Button>
+              </Link>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Rejection Dialog */}
+      <Dialog open={rejectionDialogOpen} onOpenChange={setRejectionDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject Vendor</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Please enter a reason for rejecting <span className="font-medium">{vendorToReject?.storeName}</span>
+            </p>
+            <Input
+              placeholder="Reason for rejection"
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button onClick={confirmRejection} disabled={!rejectionReason.trim()}>
+              Confirm Rejection
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -1300,6 +1300,7 @@ export const adminApi = {
     request(`/admin/vendors/${vendorId}/approve`, {
       method: "POST",
     }),
+    getDashboard: () => request("/admin/dashboard"),
 
   rejectVendor: (vendorId: number, reason: string) =>
     request(`/admin/vendors/${vendorId}/reject`, {
