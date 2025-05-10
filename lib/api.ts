@@ -1224,6 +1224,9 @@ export const orderApi = {
       method: "POST",
     }),
 }
+export const customerApi = {
+  getDashboard: () => request("/customer/dashboard"),
+}
 
 // Vendor API
 export const vendorApi = {

@@ -113,22 +113,7 @@ export default function LoginPage() {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-
-          <div className="mb-6 p-4 bg-muted rounded-md">
-            <h3 className="text-sm font-medium mb-2">Test Accounts</h3>
-            <div className="space-y-2">
-              <div className="text-xs">
-                <strong>Customer:</strong> {MOCK_USERS.CUSTOMER.username} / {MOCK_USERS.CUSTOMER.password}
-              </div>
-              <div className="text-xs">
-                <strong>Vendor:</strong> {MOCK_USERS.VENDOR.username} / {MOCK_USERS.VENDOR.password}
-              </div>
-              <div className="text-xs">
-                <strong>Admin:</strong> {MOCK_USERS.ADMIN.username} / {MOCK_USERS.ADMIN.password}
-              </div>
-            </div>
-          </div>
-
+          
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
@@ -138,7 +123,7 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Username or Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="johndoe or john.doe@example.com" {...field} />
+                      <Input placeholder="Enter your username or email" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -152,7 +137,8 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" {...field} />
+                      <Input type="password" placeholder="Enter your password" {...field} />
+              
                     </FormControl>
                     <FormMessage />
                   </FormItem>

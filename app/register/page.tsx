@@ -18,7 +18,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle, CheckCircle, Upload } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
-import { MOCK_USERS } from "@/lib/api"
 
 // Define the form schema
 const registerSchema = z
@@ -254,22 +253,6 @@ export default function RegisterPage() {
             </Alert>
           )}
 
-          <div className="mb-6 p-4 bg-muted rounded-md">
-            <h3 className="text-lg font-medium mb-2">Test Accounts</h3>
-            <p className="text-sm text-muted-foreground mb-2">You can use these accounts to test the application:</p>
-            <div className="space-y-2">
-              <div className="text-sm">
-                <strong>Customer:</strong> {MOCK_USERS.CUSTOMER.username} / {MOCK_USERS.CUSTOMER.password}
-              </div>
-              <div className="text-sm">
-                <strong>Vendor:</strong> {MOCK_USERS.VENDOR.username} / {MOCK_USERS.VENDOR.password}
-              </div>
-              <div className="text-sm">
-                <strong>Admin:</strong> {MOCK_USERS.ADMIN.username} / {MOCK_USERS.ADMIN.password}
-              </div>
-            </div>
-          </div>
-
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-4">
@@ -283,7 +266,7 @@ export default function RegisterPage() {
                       <FormItem>
                         <FormLabel>Username</FormLabel>
                         <FormControl>
-                          <Input placeholder="techqueen_emma" {...field} />
+                          <Input placeholder="Enter your username" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -297,7 +280,7 @@ export default function RegisterPage() {
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="emma.chen@techhaven.io" {...field} />
+                          <Input type="email" placeholder="your.email@example.com" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -313,7 +296,7 @@ export default function RegisterPage() {
                       <FormItem>
                         <FormLabel>First Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="Emma" {...field} />
+                          <Input placeholder="Enter your first name" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -327,7 +310,7 @@ export default function RegisterPage() {
                       <FormItem>
                         <FormLabel>Last Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="Chen" {...field} />
+                          <Input placeholder="Enter your last name" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -343,7 +326,7 @@ export default function RegisterPage() {
                       <FormItem>
                         <FormLabel>Password</FormLabel>
                         <FormControl>
-                          <Input type="password" placeholder="EmTech@2025!" {...field} />
+                          <Input type="password" placeholder="Create your password" {...field} />
                         </FormControl>
                         <FormDescription>At least 6 characters</FormDescription>
                         <FormMessage />
@@ -358,7 +341,7 @@ export default function RegisterPage() {
                       <FormItem>
                         <FormLabel>Confirm Password</FormLabel>
                         <FormControl>
-                          <Input type="password" placeholder="EmTech@2025!" {...field} />
+                          <Input type="password" placeholder="Confirm your password" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -373,7 +356,7 @@ export default function RegisterPage() {
                     <FormItem>
                       <FormLabel>Phone Number</FormLabel>
                       <FormControl>
-                        <Input placeholder="+91876543210" {...field} />
+                        <Input placeholder="Enter your phone number" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -404,104 +387,101 @@ export default function RegisterPage() {
                   )}
                 />
               </div>
-
               <div className="space-y-4">
-                <h3 className="text-lg font-medium">Address Information</h3>
+  <h3 className="text-lg font-medium">Address Information</h3>
 
-                <FormField
-                  control={form.control}
-                  name="street"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Street Address</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Street 11" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <FormField
+      control={form.control}
+      name="country"
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>Country</FormLabel>
+          <FormControl>
+            <Input placeholder="Enter country" {...field} />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="city"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>City</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Hyderabad" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+    <FormField
+      control={form.control}
+      name="state"
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>State</FormLabel>
+          <FormControl>
+            <Input placeholder="Enter state" {...field} />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  </div>
 
-                  <FormField
-                    control={form.control}
-                    name="state"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>State</FormLabel>
-                        <FormControl>
-                          <Input placeholder="TELANGANA" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <FormField
+      control={form.control}
+      name="city"
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>City</FormLabel>
+          <FormControl>
+            <Input placeholder="Enter city" {...field} />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="country"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Country</FormLabel>
-                        <FormControl>
-                          <Input placeholder="INDIA" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+    <FormField
+      control={form.control}
+      name="zipCode"
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>Zip Code</FormLabel>
+          <FormControl>
+            <Input placeholder="Enter zip code" {...field} />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  </div>
 
-                  <FormField
-                    control={form.control}
-                    name="zipCode"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Zip Code</FormLabel>
-                        <FormControl>
-                          <Input placeholder="500076" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+  <FormField
+    control={form.control}
+    name="street"
+    render={({ field }) => (
+      <FormItem>
+        <FormLabel>Street Address</FormLabel>
+        <FormControl>
+          <Input placeholder="Enter your address" {...field} />
+        </FormControl>
+        <FormMessage />
+      </FormItem>
+    )}
+  />
 
-                <FormField
-                  control={form.control}
-                  name="isDefault"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md p-2">
-                      <FormControl>
-                        <Checkbox checked={field.value} onCheckedChange={field.onChange} id="isDefault" />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel htmlFor="isDefault">Set as default address</FormLabel>
-                        <FormDescription>
-                          This address will be used as your default shipping and billing address
-                        </FormDescription>
-                      </div>
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              {role === "VENDOR" && (
+  <FormField
+    control={form.control}
+    name="isDefault"
+    render={({ field }) => (
+      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md p-2">
+        <FormControl>
+          <Checkbox checked={field.value} onCheckedChange={field.onChange} id="isDefault" />
+        </FormControl>
+        <div className="space-y-1 leading-none">
+          <FormLabel htmlFor="isDefault">Set as default address</FormLabel>
+          <FormDescription>
+            This address will be used as your default shipping and billing address
+          </FormDescription>
+        </div>
+      </FormItem>
+    )}
+  />
+</div>{role === "VENDOR" && (
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium">Store Information</h3>
 

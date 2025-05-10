@@ -1,30 +1,62 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
+import { customerApi } from "@/lib/api"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Package, ShoppingBag, Heart, MapPin, User } from "lucide-react"
 
+interface CustomerDashboardDto {
+  orderCount: number
+  recentOrders: {
+    orderNumber: string
+    createdAt: string
+    total: number
+    itemCount: number
+    status: string
+  }[]
+  cartItems: number
+  cartTotal: number
+  wishlistCount: number
+  savedAddressCount: number
+}
+
 export default function CustomerDashboard() {
   const { user, isLoading } = useAuth()
   const router = useRouter()
+  const [dashboardData, setDashboardData] = useState<CustomerDashboardDto | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  // Redirect if not logged in or not a customer
   useEffect(() => {
     if (!isLoading && (!user || user.role !== "CUSTOMER")) {
       router.push("/login")
     }
   }, [user, isLoading, router])
 
-  if (isLoading) {
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        const data = await customerApi.getDashboard()
+        setDashboardData(data)
+      } catch (err) {
+        console.error("Failed to fetch customer dashboard:", err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (user && user.role === "CUSTOMER") {
+      fetchDashboard()
+    }
+  }, [user])
+
+  if (isLoading || loading || !dashboardData) {
     return <div className="container mx-auto px-4 py-12">Loading...</div>
   }
 
-  if (!user) {
-    return null // Will redirect in useEffect
-  }
+  const { orderCount, cartItems, cartTotal, wishlistCount, savedAddressCount, recentOrders } = dashboardData
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -37,7 +69,7 @@ export default function CustomerDashboard() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
+            <div className="text-2xl font-bold">{orderCount}</div>
             <p className="text-xs text-muted-foreground">+2 from last month</p>
           </CardContent>
         </Card>
@@ -47,8 +79,8 @@ export default function CustomerDashboard() {
             <ShoppingBag className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹2,350</div>
-            <p className="text-xs text-muted-foreground">3 items in cart</p>
+            <div className="text-2xl font-bold">₹{cartTotal.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">{cartItems} items in cart</p>
           </CardContent>
         </Card>
         <Card>
@@ -57,7 +89,7 @@ export default function CustomerDashboard() {
             <Heart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">7</div>
+            <div className="text-2xl font-bold">{wishlistCount}</div>
             <p className="text-xs text-muted-foreground">Items saved for later</p>
           </CardContent>
         </Card>
@@ -67,7 +99,7 @@ export default function CustomerDashboard() {
             <MapPin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">2</div>
+            <div className="text-2xl font-bold">{savedAddressCount}</div>
             <p className="text-xs text-muted-foreground">Delivery locations</p>
           </CardContent>
         </Card>
@@ -80,6 +112,7 @@ export default function CustomerDashboard() {
           <TabsTrigger value="addresses">Addresses</TabsTrigger>
           <TabsTrigger value="profile">Profile</TabsTrigger>
         </TabsList>
+
         <TabsContent value="orders" className="space-y-4">
           <Card>
             <CardHeader>
@@ -88,44 +121,33 @@ export default function CustomerDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="rounded-lg border p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Order #ORD12345</p>
-                      <p className="text-sm text-muted-foreground">Placed on April 23, 2023</p>
+                {recentOrders.length === 0 && <p className="text-sm text-muted-foreground">No recent orders found.</p>}
+                {recentOrders.map((order) => (
+                  <div key={order.orderNumber} className="rounded-lg border p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">Order #{order.orderNumber}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Placed on {new Date(order.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium">₹{order.total.toLocaleString()}</p>
+                        <p className="text-sm text-muted-foreground">{order.itemCount} item(s)</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-medium">₹4,599</p>
-                      <p className="text-sm text-muted-foreground">3 items</p>
-                    </div>
-                  </div>
-                  <div className="mt-2">
-                    <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold">
-                      Delivered
-                    </span>
-                  </div>
-                </div>
-                <div className="rounded-lg border p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Order #ORD12346</p>
-                      <p className="text-sm text-muted-foreground">Placed on April 15, 2023</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium">₹2,199</p>
-                      <p className="text-sm text-muted-foreground">1 item</p>
+                    <div className="mt-2">
+                      <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold">
+                        {order.status}
+                      </span>
                     </div>
                   </div>
-                  <div className="mt-2">
-                    <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold">
-                      Delivered
-                    </span>
-                  </div>
-                </div>
+                ))}
               </div>
             </CardContent>
           </Card>
         </TabsContent>
+
         <TabsContent value="wishlist" className="space-y-4">
           <Card>
             <CardHeader>
@@ -133,10 +155,11 @@ export default function CustomerDashboard() {
               <CardDescription>Items you've saved for later</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">You have 7 items in your wishlist.</p>
+              <p className="text-sm text-muted-foreground">You have {wishlistCount} items in your wishlist.</p>
             </CardContent>
           </Card>
         </TabsContent>
+
         <TabsContent value="addresses" className="space-y-4">
           <Card>
             <CardHeader>
@@ -144,10 +167,11 @@ export default function CustomerDashboard() {
               <CardDescription>Manage your delivery addresses</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">You have 2 saved addresses.</p>
+              <p className="text-sm text-muted-foreground">You have {savedAddressCount} saved addresses.</p>
             </CardContent>
           </Card>
         </TabsContent>
+
         <TabsContent value="profile" className="space-y-4">
           <Card>
             <CardHeader>
@@ -160,10 +184,17 @@ export default function CustomerDashboard() {
                   <User className="h-4 w-4 mr-2 text-muted-foreground" />
                   <span className="text-sm font-medium">
                     {user.firstName} {user.lastName}
+                    {/* {user?.address?.country}{user?.address?.state}{user?.address?.city}
+                    {user?.address?.zipCode}{user?.address?.street} */}
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground">{user.email}</p>
                 <p className="text-sm text-muted-foreground">{user.phoneNumber}</p>
+                {/* <p className="text-sm text-muted-foreground">{user?.address?.country}</p>
+                <p className="text-sm text-muted-foreground">{user?.address?.state}</p>
+                <p className="text-sm text-muted-foreground">{user?.address?.city}</p>
+                <p className="text-sm text-muted-foreground">{user?.address?.zipCode}</p>
+                <p className="text-sm text-muted-foreground">{user?.address?.street}</p> */}
               </div>
             </CardContent>
           </Card>
